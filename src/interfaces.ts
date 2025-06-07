@@ -319,3 +319,58 @@ export interface LinkedInResponse {
     organizationId?: string;
     institutionLinkedinUrl?: string;
   }
+// Nueva interfaz para contacto vectorizado (colección separada)
+export interface VectorizedContact {
+    jid: string                                   // WhatsApp ID único del contacto (referencia)
+    name: string | null                           // Nombre del contacto
+    number: string | null                         // Número de teléfono
+    email?: string | null                         // Email del contacto
+    linkedinProfile?: string | null               // URL del perfil de LinkedIn
+    linkedinData?: LinkedInResponse | null         // Datos enriquecidos de LinkedIn
+    
+    // Campos específicos de vectorización
+    embeddingVector: number[]                     // Vector embedding del contacto
+    embeddingText: string                         // Texto usado para generar el vector
+    vectorizedAt: admin.firestore.Timestamp       // Timestamp de vectorización
+    vectorVersion: string                         // Versión del modelo usado para vectorización
+    createdAt: admin.firestore.Timestamp          // Timestamp de creación
+    updatedAt: admin.firestore.Timestamp          // Timestamp de última actualización
+}
+
+// Interfaz para crear un contacto vectorizado
+export interface CreateVectorizedContactData {
+    jid: string
+    name: string | null
+    number: string | null
+    email?: string | null
+    linkedinProfile?: string | null
+    linkedinData?: LinkedInResponse | null
+    embeddingVector: number[]
+    embeddingText: string
+    vectorizedAt: admin.firestore.Timestamp
+    vectorVersion: string
+}
+
+// Interfaz para resultados de búsqueda similar
+export interface SimilarContactResult {
+    contact: VectorizedContact
+    similarity: number
+    distance: number
+}
+
+// Interfaz para parámetros de búsqueda
+export interface ContactSearchParams {
+    query?: string                    // Texto de búsqueda
+    queryVector?: number[]            // Vector de búsqueda directo
+    limit?: number                    // Límite de resultados
+    minSimilarity?: number            // Similitud mínima
+    excludeJids?: string[]            // JIDs a excluir de la búsqueda
+}
+
+// Interfaz para resultado de vectorización
+export interface VectorizationResult {
+    vector: number[]
+    textUsed: string
+    success: boolean
+    error?: string
+}

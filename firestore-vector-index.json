@@ -1,0 +1,17 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "vectorized-contacts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "embeddingVector",
+          "vectorConfig": {
+            "dimension": 1536,
+            "flat": {}
+          }
+        }
+      ]
+    }
+  ]
+} 

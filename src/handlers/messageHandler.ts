@@ -132,7 +132,7 @@ async function handleMessage(sock: WASocket, message: WAMessage) {
         await saveContact({
             jid: remoteJid,
             name: contactInfo.name,
-            number: contactInfo.number,
+            number: contactInfo.number ? (contactInfo.number.startsWith('54911') ? '+54' + contactInfo.number.substring(3) : '+' + contactInfo.number) : null,
             lastMessageAt: messageTimestamp
         })
 

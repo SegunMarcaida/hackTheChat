@@ -3,7 +3,6 @@ import { ContactStatus } from '../interfaces.js'
 import { getContactByJid, saveContact } from '../database/firestore.js'
 import { createLogger } from '../logger/index.js'
 import { welcomeFlowConfig, validateEmail } from '../config/welcomeFlow.js'
-import { CONSTANTS } from '../config/constants.js'
 import { 
     generateWelcomeMessage, 
     generateEmailRequest, 
@@ -19,9 +18,6 @@ import { scheduleCall } from '../services/callingService.js'
 import admin from 'firebase-admin'
 
 const logger = createLogger('WelcomeFlow')
-
-// Terms and conditions link
-const termsAndConditionsLink = CONSTANTS.TERMS_AND_CONDITIONS_URL
 
 /**
  * Procesa el flujo de bienvenida para un contacto
@@ -222,7 +218,7 @@ async function handleEmailResponse(
 }
 
 /**
- * Busca el perfil de LinkedIn y maneja el resultado usando el servicio de enriquecimiento
+ * Busca el perfil de LinkedIn y maneja el resultado
  */
 async function searchAndHandleLinkedIn(
     sock: WASocket,
@@ -309,7 +305,6 @@ async function searchAndHandleLinkedIn(
         await updateContactStatus(jid, ContactStatus.COMPLETED)
     }
 }
-
 /**
  * Maneja la respuesta sobre el permiso para llamar
  */
@@ -341,19 +336,14 @@ async function handleCallPermissionResponse(
         await sock.sendMessage(jid, { text: schedulingMessage })
         
         // Actualizar estado y programar llamada
-        const existingContact = await getContactByJid(jid)
-        if (existingContact) {
-            await saveContact({
-                jid: existingContact.id,
-                name: existingContact.name,
-                number: existingContact.number,
-                email: existingContact.email,
-                linkedinProfile: existingContact.linkedinProfile,
-                callPermission: true,
-                status: ContactStatus.CALL_SCHEDULED,
-                lastMessageAt: admin.firestore.Timestamp.now()
-            })
-        }
+        await saveContact({
+            jid,
+            name: contactName,
+            number: jid.split('@')[0],
+            callPermission: true,
+            status: ContactStatus.CALL_SCHEDULED,
+            lastMessageAt: admin.firestore.Timestamp.now()
+        })
         
         // Programar la llamada
         const contact = await getContactByJid(jid)
@@ -391,19 +381,14 @@ async function handleCallPermissionResponse(
         await sock.sendMessage(jid, { text: declinedMessage })
         
         // Actualizar estado y marcar como completado
-        const contactForDecline = await getContactByJid(jid)
-        if (contactForDecline) {
-            await saveContact({
-                jid: contactForDecline.id,
-                name: contactForDecline.name,
-                number: contactForDecline.number,
-                email: contactForDecline.email,
-                linkedinProfile: contactForDecline.linkedinProfile,
-                callPermission: false,
-                status: ContactStatus.COMPLETED,
-                lastMessageAt: admin.firestore.Timestamp.now()
-            })
-        }
+        await saveContact({
+            jid,
+            name: contactName,
+            number: jid.split('@')[0],
+            callPermission: false,
+            status: ContactStatus.COMPLETED,
+            lastMessageAt: admin.firestore.Timestamp.now()
+        })
         
         logger.info('📵 Call permission declined', { jid, contactName })
         
@@ -456,7 +441,7 @@ async function generateMessage(
                 aiMessage = await generateLinkedInNotFoundMessage(contactName)
                 break
             case 'callScheduling':
-                aiMessage = await generateCallSchedulingMessage(contactName, termsAndConditionsLink)
+                aiMessage = await generateCallSchedulingMessage(contactName)
                 break
             case 'callDeclined':
                 aiMessage = await generateCallDeclinedMessage(contactName)
@@ -509,9 +494,7 @@ function getStaticMessage(type: string): string {
     }
 }
 
-/**
- * Actualiza el estado de un contacto
- */
+
 async function updateContactStatus(jid: string, status: ContactStatus) {
     try {
         const contact = await getContactByJid(jid)
