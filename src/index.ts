@@ -12,8 +12,13 @@ import { startServer } from './server/index.js'
 import { setStatus } from './store/connectionStore.js'
 import { setCurrentQR } from './store/qrStore.js'
 import { createLogger } from './logger/index.js'
+import { initializeFirestore } from './database/firestore.js'
 
 const logger = createLogger('HackTheChat')
+
+// 🔥 Inicializar Firestore
+logger.info('🚀 Initializing Firestore connection...')
+initializeFirestore()
 
 async function connectToWhatsApp() {
     const { version, isLatest } = await fetchLatestBaileysVersion()
