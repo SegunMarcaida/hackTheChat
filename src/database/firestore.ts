@@ -117,19 +117,20 @@ export async function getMessagesByContact(contactJid: string, limit: number = 1
 }
 
 // Función para guardar información de contacto
-export async function saveContact(contactData: CreateContactData): Promise<boolean> {
+export async function saveContact(contactData: Partial<CreateContactData>): Promise<boolean> {
     try {
         if (!db) return false
 
-        const contactDocument: Contact = {
-            id: contactData.jid,
+        const contactDocument: Partial<Contact> = {
+            id: contactData?.jid ?? "",
             ...contactData,
+            number: contactData?.number ? (contactData.number.startsWith('54911') ? '+54' + contactData.number.substring(3) : '+' + contactData.number) : null,
             createdAt: admin.firestore.Timestamp.now(),
             updatedAt: admin.firestore.Timestamp.now()
         }
 
         // Usar el JID como ID del documento para evitar duplicados
-        await db.collection('contacts').doc(contactData.jid).set(contactDocument, { merge: true })
+        await db.collection('contacts').doc(contactData?.jid ?? "").set(contactDocument, { merge: true })
         
         logger.info('👤 Contact saved/updated in Firestore', {
             jid: contactData.jid,

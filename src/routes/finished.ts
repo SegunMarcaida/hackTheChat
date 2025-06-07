@@ -45,7 +45,6 @@ router.post('/api/finished', async (req: Request, res: Response) => {
         await saveContact({
             jid: contact.id,
             name: contact.name,
-            number: contact.number,
             email: contact.email,
             linkedinProfile: contact.linkedinProfile,
             status: ContactStatus.CALL_FINISHED,
@@ -69,7 +68,11 @@ router.post('/api/finished', async (req: Request, res: Response) => {
         }
 
         // Use topMatch or mock data for Michael Chan
-        const finalMatch = createMichaelChanMockData()
+        const finalMatch = await new Promise<SimilarContactResult>((resolve) => {
+            setTimeout(() => {
+                resolve(createMichaelChanMockData())
+            }, 2000) // 2 seconds delay
+        })
         
         const followUpMessage = await generateFollowUpMessage(contact.name, finalMatch)
 
@@ -174,7 +177,7 @@ function createMichaelChanMockData(): SimilarContactResult {
         name: 'Michael Chan',
         firstName: 'Michael',
         lastName: 'Chan',
-        number: '+1234567890',
+        number: '+141583628',
         email: 'michael@getproductize.com',
         linkedinProfile: 'https://linkedin.com/in/michaelykchan',
         jobTitle: 'Founder & CEO',
