@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { config } from '../config/index.js'
-import { LinkedInResponse, Contact } from '../interfaces.js'
+import { LinkedInResponse, Contact, SimilarContactResult } from '../interfaces.js'
 import { createLogger } from '../logger/index.js'
 
 const logger = createLogger('OpenAI')
@@ -257,7 +257,7 @@ INSTRUCTIONS:
 /**
  * Genera mensaje de seguimiento después de terminar la llamada
  */
-export async function generateCallFinishedMessage(contactName: string | null): Promise<string> {
+export async function generateCallFinishedMessage(contactName: string | null, topMatch: SimilarContactResult | null): Promise<string> {
     if (!client) {
         throw new Error('OpenAI API key is missing. Cannot generate call finished message.')
     }
@@ -265,18 +265,11 @@ export async function generateCallFinishedMessage(contactName: string | null): P
     const systemPrompt = `You are Axiom, a friendly networking assistant. You just finished a call with someone and want to send a follow-up message.
 
 INSTRUCTIONS:
-- Write in Spanish (the user specifically requested this)
 - Be warm and appreciative about the conversation
-- Mention that you enjoyed learning about their experience and projects
-- Explain that you're now analyzing the information they shared
-- Promise to connect them with the best contacts from your network that can help with their goals
-- Mention you'll contact them soon with strategic connections
-- Thank them for their time
-- Express hope that the connections will be valuable for them
-- Keep the tone professional but warm and personal
-- Use their name if available
-- Add an appropriate emoji at the end (like 🚀)
-- Make it feel authentic and not robotic`
+- Give him the top match information and explain why is the top match
+- Provide the match contact, linkedin profile and email.
+- Explain why is the top match
+`
 
     const userPrompt = contactName 
         ? `Generate a follow-up message for ${contactName} after finishing a call with them.`

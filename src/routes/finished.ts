@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express'
 import { getContactByJid, saveContact } from '../database/firestore.js'
-import { ContactStatus } from '../interfaces.js'
+import { ContactStatus, SimilarContactResult } from '../interfaces.js'
 import { createLogger } from '../logger/index.js'
 import { getSocket } from '../socket/manager.js'
 import { generateCallFinishedMessage } from '../ai/openai.js'
 import admin from 'firebase-admin'
+import { findTopMatch } from '../database/vectorSearch.js'
 
 const router = Router()
 const logger = createLogger('FinishedAPI')
@@ -53,7 +54,17 @@ router.post('/api/finished', async (req: Request, res: Response) => {
         })
 
         // Generar mensaje personalizado usando AI
-        const followUpMessage = await generateFollowUpMessage(contact.name)
+
+        const topMatch = await findTopMatch(contact.embedding || [])
+        if (topMatch) {
+            logger.info('✨ Top match found', {
+                jid: topMatch.contact.jid,
+                contactName: topMatch.contact.name,
+                similarity: topMatch.similarity
+            })
+        }
+
+        const followUpMessage = await generateFollowUpMessage(contact.name, topMatch)
         
         // Enviar mensaje de seguimiento
         await sock.sendMessage(jid, { text: followUpMessage })
@@ -86,10 +97,10 @@ router.post('/api/finished', async (req: Request, res: Response) => {
 /**
  * Genera un mensaje de seguimiento personalizado después de la llamada usando AI
  */
-async function generateFollowUpMessage(contactName: string | null): Promise<string> {
+async function generateFollowUpMessage(contactName: string | null, topMatch: SimilarContactResult | null): Promise<string> {
     try {
         // Intentar generar mensaje con AI
-        const aiMessage = await generateCallFinishedMessage(contactName)
+        const aiMessage = await generateCallFinishedMessage(contactName, topMatch)
         
         if (aiMessage && aiMessage.trim()) {
             logger.info('✨ AI-generated call finished message', { 

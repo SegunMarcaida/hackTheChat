@@ -22,6 +22,7 @@ export interface Contact {
         country?: string
         state?: string
     }
+    jid?: string
     jobTitle?: string
     linkedinEnrichmentResponse?: LinkedInResponse
     company?: string
@@ -40,7 +41,8 @@ export interface Contact {
     lastEnrichedAt?: Date | admin.firestore.Timestamp | any;
     img?: string
     jobHistory?: JobHistory[]
-    educationHistory?: EducationHistory[]
+    educationHistory?: EducationHistory[];
+    embedding?: number[]
 }
 
 // Interfaz para crear un contacto (sin timestamps automáticos)
@@ -354,9 +356,8 @@ export interface CreateVectorizedContactData {
 
 // Interfaz para resultados de búsqueda similar
 export interface SimilarContactResult {
-    contact: VectorizedContact
+    contact: Contact
     similarity: number
-    distance: number
 }
 
 // Interfaz para parámetros de búsqueda
