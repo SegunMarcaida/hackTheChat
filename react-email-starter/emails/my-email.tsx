@@ -85,6 +85,30 @@ export const TicketPurchaseConfirmationEmail = ({
                         <Hr style={hr} />
                         <HtmlContent html={customMessage} />
 
+                        <Hr style={hr} />
+                        
+                        {/* <Heading
+                            as="h3"
+                            className="m-0 mt-[16px] text-[20px] font-semibold leading-[20px] text-gray-900 mb-4"
+                        >
+                            🔥 Sneak Peek: What Awaits You
+                        </Heading> */}
+                        
+                        {/* <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div style={statCard}>
+                                <Text style={statNumber}>500+</Text>
+                                <Text style={statLabel}>Founders & Investors</Text>
+                            </div>
+                            <div style={statCard}>
+                                <Text style={statNumber}>20,000+</Text>
+                                <Text style={statLabel}>Intros Made</Text>
+                            </div>
+                            <div style={statCard}>
+                                <Text style={statNumber}>150+</Text>
+                                <Text style={statLabel}>People You Can't Afford to Miss</Text>
+                            </div>
+                        </div> */}
+
                         {/* <Text style={paragraph}>
                             Click the button below to view the event page or your ticket.
                         </Text> */}
@@ -113,6 +137,21 @@ export const TicketPurchaseConfirmationEmail = ({
                         <Button className="cursor-pointer" style={whatsappButton} href="https://api.whatsapp.com/send?phone=5491159785985&text=Hi%20Axiom%2C%20could%20you%20help%20me%20connect%20with%20the%20right%20people%3F">
                             💬 Message me on WhatsApp
                         </Button>
+
+                        <div className="grid grid-cols-3 gap-4 mb-6 mt-8 text-pretty">
+                            <div style={statCard}>
+                                <Text style={statNumber}>500+</Text>
+                                <Text style={statLabel}>Founders & Investors</Text>
+                            </div>
+                            <div style={statCard}>
+                                <Text style={statNumber}>178</Text>
+                                <Text style={statLabel}>Intros Made for this event</Text>
+                            </div>
+                            <div style={statCard}>
+                                <Text style={statNumber}>150+</Text>
+                                <Text style={statLabel}>People You Can't Afford to Miss</Text>
+                            </div>
+                        </div>
                         
                         {/* <Hr style={hr} />
                     <Text style={paragraph}>
@@ -261,6 +300,29 @@ const heading = {
     color: "#888888",
 };
 
+const statCard = {
+    backgroundColor: "#f8fafc",
+    borderRadius: "8px",
+    padding: "16px",
+    textAlign: "center" as const,
+    border: "1px solid #e2e8f0",
+};
+
+const statNumber = {
+    fontSize: "24px",
+    fontWeight: "bold",
+    color: "#09090b",
+    margin: "0 0 4px 0",
+    lineHeight: "1.2",
+};
+
+const statLabel = {
+    fontSize: "12px",
+    color: "#71717a",
+    margin: "0",
+    lineHeight: "1.4",
+};
+
 // const unsubscribeSection = {
 //     textAlign: 'right' as const,
 //     marginTop: '20px',
@@ -274,22 +336,22 @@ const heading = {
 
 // Mock data for testing
 export const mockTicketData = {
-    eventUrl: "https://gomry.com/events/sf-founders-summit-2024",
+    eventUrl: "https://gomry.com/events/sf-founders-summit-2025",
     ticketUrl: "https://gomry.com/tickets/abc123def456",
     organizationName: "SF Founders Network",
     organizationLogoUrl: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center",
-    eventName: "SF Founders Summit 2024",
-    ticketOwnerName: "Alex Johnson",
-    eventImgUrl: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=700&h=320&fit=crop&crop=center",
+    eventName: "SF Founders Summit 2025",
+    ticketOwnerName: "Patrick Turricelli",
+    eventImgUrl: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=700&h=320&fit=crop&crop=center",
     customMessage: `
         <p style="color: #71717a; font-size: 16px; line-height: 24px; margin: 16px 0;">
             🚀 <strong>Ready to connect, learn, and grow?</strong>
         </p>
         <p style="color: #71717a; font-size: 16px; line-height: 24px; margin: 16px 0;">
-            Your registration for the SF Founders Summit 2024 is confirmed! Join 500+ founders, investors, and innovators for an intensive day of networking, learning, and collaboration in the heart of San Francisco.
+            Your registration for the SF Founders Summit 2025 is confirmed! Join 500+ founders, investors, and innovators for an intensive day of networking, learning, and collaboration in the heart of San Francisco.
         </p>
         <ul style="color: #71717a; font-size: 16px; line-height: 24px; margin: 16px 0; padding-left: 20px;">
-            <li><strong>Date:</strong> March 22, 2024</li>
+            <li><strong>Date:</strong> March 22, 2025</li>
             <li><strong>Time:</strong> 8:00 AM - 6:00 PM (Registration opens at 7:30 AM)</li>
             <li><strong>Location:</strong> Salesforce Tower, San Francisco, CA</li>
             <li><strong>What to bring:</strong> Business cards, laptop, and your entrepreneurial spirit!</li>
