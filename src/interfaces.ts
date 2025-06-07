@@ -29,7 +29,6 @@ export interface Contact {
     number: string | null                         // Número de teléfono (puede ser null)
     email?: string | null                         // Email del contacto
     linkedinProfile?: string | null               // URL del perfil de LinkedIn
-    linkedinData?: LinkedInProfile | null         // Datos enriquecidos de LinkedIn
     status?: ContactStatus                        // Estado del flujo de bienvenida
     callPermission?: boolean                      // Si dio permiso para llamar
     callScheduled?: boolean                       // Si se programó una llamada
@@ -50,7 +49,6 @@ export interface CreateContactData {
     number: string | null
     email?: string | null
     linkedinProfile?: string | null
-    linkedinData?: LinkedInProfile | null
     status?: ContactStatus
     callPermission?: boolean
     callScheduled?: boolean
@@ -64,7 +62,6 @@ export interface UpdateContactData {
     number?: string | null
     email?: string | null
     linkedinProfile?: string | null
-    linkedinData?: LinkedInProfile | null
     status?: ContactStatus
     callPermission?: boolean
     callScheduled?: boolean
@@ -200,7 +197,6 @@ export interface LinkedInResponse {
     organizationId?: string;
     institutionLinkedinUrl?: string;
   }
->>>>>>> d7a249f (scrape linkedin endpoint)
 
 
 export interface LinkedInResponse {
