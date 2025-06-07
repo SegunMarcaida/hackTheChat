@@ -122,6 +122,7 @@ export async function saveContact(contactData: CreateContactData): Promise<boole
         if (!db) return false
 
         const contactDocument: Contact = {
+            id: contactData.jid,
             ...contactData,
             createdAt: admin.firestore.Timestamp.now(),
             updatedAt: admin.firestore.Timestamp.now()

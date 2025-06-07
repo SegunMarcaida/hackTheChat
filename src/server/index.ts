@@ -17,6 +17,7 @@ export function startServer() {
     app.set('view engine', 'hbs')
     app.set('views', path.join(process.cwd(), 'src', 'views'))
 
+    app.use(express.json())
     app.use(express.urlencoded({ extended: true }))
     app.use(
         session({
