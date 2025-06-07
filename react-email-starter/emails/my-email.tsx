@@ -110,7 +110,7 @@ export const TicketPurchaseConfirmationEmail = ({
                             I'll connect you to the best people attending {eventName}. Message me on WhatsApp and let's get on a call.
                         </Text>
                         
-                        <Button className="cursor-pointer" style={whatsappButton} href="https://wa.me/1234567890">
+                        <Button className="cursor-pointer" style={whatsappButton} href="https://api.whatsapp.com/send?phone=5491159785985&text=Hi%20Axiom%2C%20could%20you%20help%20me%20connect%20with%20the%20right%20people%3F">
                             💬 Message me on WhatsApp
                         </Button>
                         
