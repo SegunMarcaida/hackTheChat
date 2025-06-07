@@ -1,4 +1,6 @@
+import './crypto-polyfill.js'
 import 'dotenv/config'
+import { webcrypto as crypto } from 'node:crypto'
 
 import { Boom } from '@hapi/boom'
 import { DisconnectReason, BaileysEventMap, fetchLatestBaileysVersion } from 'baileys'
