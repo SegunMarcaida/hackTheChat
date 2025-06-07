@@ -189,20 +189,21 @@ export async function generateCallSchedulingMessage(contactName: string | null, 
         throw new Error('OpenAI API key is missing. Cannot generate call scheduling message.')
     }
 
-    const systemPrompt = `You are Axiom, a friendly networking assistant. Someone agreed to a call and you're confirming you'll call them soon.
+    const systemPrompt = `You are Axiom, a friendly networking assistant. Someone agreed to a call and you need to provide them with a phone number to call.
 
 INSTRUCTIONS:
 - Write in English
 - Be brief and direct (1-2 sentences max)
-- Thank them and confirm you're calling them right now
-- Mention terms and conditions acceptance briefly
+- Thank them and ask them to call the provided phone number
+- Mention terms and conditions acceptance briefly if link is provided
 - If a terms link is provided, include it as a plain clickable URL
 - Use their name if available
-- No excessive emojis or enthusiasm`
+- No excessive emojis or enthusiasm
+- Make it clear they should call the number`
     
     const userPrompt = contactName 
-        ? `${contactName} agreed to the call. Confirm you're scheduling it.${termsAndConditionsLink ? ` Include this terms and conditions URL as a clickable link: ${termsAndConditionsLink}` : ''}`
-        : `Contact agreed to the call. Confirm you're scheduling it.${termsAndConditionsLink ? ` Include this terms and conditions URL as a clickable link: ${termsAndConditionsLink}` : ''}`
+        ? `${contactName} agreed to the call. Ask them to call +16672207219.${termsAndConditionsLink ? ` Include this terms and conditions URL as a clickable link: ${termsAndConditionsLink}` : ''}`
+        : `Contact agreed to the call. Ask them to call +16672207219.${termsAndConditionsLink ? ` Include this terms and conditions URL as a clickable link: ${termsAndConditionsLink}` : ''}`
 
     const chat = await client.chat.completions.create({
         model: 'gpt-3.5-turbo',
@@ -262,18 +263,39 @@ export async function generateCallFinishedMessage(contactName: string | null, to
         throw new Error('OpenAI API key is missing. Cannot generate call finished message.')
     }
 
-    const systemPrompt = `You are Axiom, a friendly networking assistant. You just finished a call with someone and want to send a follow-up message.
+    const systemPrompt = `You are Axiom, a friendly networking assistant. You just finished a call with someone and want to send a follow-up message with their top match.
 
 INSTRUCTIONS:
-- Be warm and appreciative about the conversation
-- Give him the top match information and explain why is the top match
-- Provide the match contact, linkedin profile and email.
-- Explain why is the top match
-`
+- Start by mentioning you're thinking through your network for the right person
+- If you have a top match, provide detailed information about them:
+  - Their name and title/role
+  - Company they work for and what the company does
+  - Why they're a good match based on the person's needs/interests
+  - Their expertise and background that's relevant
+  - Any notable achievements or characteristics
+- Include their LinkedIn profile URL if available
+- Ask if they'd like an introduction
+- Ask if there's any specific context or notes they'd like you to pass along
+- Be conversational and detailed like you're sharing insider knowledge
+- Write in a helpful, connector-style tone
+- If no match is provided, explain you're still searching through your network`
 
-    const userPrompt = contactName 
-        ? `Generate a follow-up message for ${contactName} after finishing a call with them.`
-        : `Generate a follow-up message after finishing a call with this contact.`
+    let userPrompt = ''
+    if (topMatch && topMatch.contact) {
+        const contact = topMatch.contact
+        const linkedin = contact.linkedinProfile || `https://linkedin.com/in/${contact.linkedinEnrichmentResponse?.public_identifier || ''}`
+        const companyName = contact.company || 
+                           contact.linkedinEnrichmentResponse?.experiences?.[0]?.company || 
+                           'their company'
+        
+        userPrompt = contactName 
+            ? `Generate a follow-up message for ${contactName}. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}.`
+            : `Generate a follow-up message after call. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}.`
+    } else {
+        userPrompt = contactName 
+            ? `Generate a follow-up message for ${contactName} after finishing a call. Still searching for the right match in your network.`
+            : `Generate a follow-up message after finishing a call. Still searching for the right match in your network.`
+    }
 
     const chat = await client.chat.completions.create({
         model: 'gpt-3.5-turbo',
@@ -281,8 +303,8 @@ INSTRUCTIONS:
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7, // A bit more creativity for a warmer, more personal message
-        max_tokens: 140
+        temperature: 0.7,
+        max_tokens: 300 // Increased for more detailed messages
     })
 
     return chat.choices[0]?.message?.content?.trim() || ''
@@ -362,9 +384,9 @@ INSTRUCTIONS:
 }
 
 /**
- * Genera un mensaje publicitario personalizado para Auth0
+ * Genera un mensaje publicitario personalizado para Auth0 con datos de LinkedIn
  */
-export async function generateAuth0PublicityMessage(contactName: string | null): Promise<string> {
+export async function generateAuth0PublicityMessage(contactName: string | null, linkedinData?: Contact): Promise<string> {
     if (!client) {
         throw new Error('OpenAI API key is missing. Cannot generate Auth0 publicity message.')
     }
@@ -373,19 +395,34 @@ export async function generateAuth0PublicityMessage(contactName: string | null):
 
 INSTRUCTIONS:
 - Write in English
+- Start with a personalized touch using their professional information
 - Be conversational and helpful (not salesy or pushy)
 - Mention Auth0 as a solution that could help with their development/business needs
 - Briefly explain what Auth0 does (authentication, authorization, user management)
 - Highlight key benefits like security, easy integration, and developer-friendly features
 - Mention that it's trusted by thousands of companies
-- Keep it concise but informative (2-3 sentences max)
-- Use their name if available
-- Sound like you're genuinely sharing a useful resource
-- Don't be overly promotional - focus on value and relevance`
+- If they're in tech/development, emphasize developer-friendly aspects
+- If they're in business/management, focus on security and business benefits
+- Keep it informative but conversational (3-4 sentences max)
+- Use their name and professional background if available
+- Sound like you're genuinely sharing a useful resource that fits their profile
+- Don't be overly promotional - focus on relevance to their role/industry`
 
-    const userPrompt = contactName 
-        ? `Generate a personalized Auth0 recommendation message for ${contactName} based on your recent conversation.`
-        : `Generate a personalized Auth0 recommendation message for this contact based on your recent conversation.`
+    let userPrompt = ''
+    
+    if (linkedinData && (linkedinData.jobTitle || linkedinData.company || linkedinData.linkedinEnrichmentResponse)) {
+        const jobTitle = linkedinData.jobTitle || linkedinData.linkedinEnrichmentResponse?.headline || 'professional'
+        const company = linkedinData.company || linkedinData.linkedinEnrichmentResponse?.experiences?.[0]?.company || 'their company'
+        const city = linkedinData.location?.city || linkedinData.linkedinEnrichmentResponse?.city || ''
+        
+        userPrompt = contactName 
+            ? `Generate a personalized Auth0 recommendation for ${contactName}, who is ${jobTitle} at ${company}${city ? ` in ${city}` : ''}. Tailor the message to their professional background and how Auth0 could benefit their work.`
+            : `Generate a personalized Auth0 recommendation for a ${jobTitle} at ${company}${city ? ` in ${city}` : ''}. Tailor the message to their professional background and how Auth0 could benefit their work.`
+    } else {
+        userPrompt = contactName 
+            ? `Generate a personalized Auth0 recommendation message for ${contactName} based on your recent conversation.`
+            : `Generate a personalized Auth0 recommendation message for this contact based on your recent conversation.`
+    }
 
     const chat = await client.chat.completions.create({
         model: 'gpt-3.5-turbo',
@@ -394,7 +431,63 @@ INSTRUCTIONS:
             { role: 'user', content: userPrompt }
         ],
         temperature: 0.6,
-        max_tokens: 40
+        max_tokens: 120
+    })
+
+    return chat.choices[0]?.message?.content?.trim() || ''
+}
+
+/**
+ * Genera un mensaje promocional especial de Auth0 con descuento u oferta
+ */
+export async function generateAuth0PromotionMessage(contactName: string | null, linkedinData?: Contact): Promise<string> {
+    if (!client) {
+        throw new Error('OpenAI API key is missing. Cannot generate Auth0 promotion message.')
+    }
+
+    const systemPrompt = `You want to share a special Auth0 promotion that could benefit the contact professionally.
+
+INSTRUCTIONS:
+- Write in English
+- Start with excitement about a special offer or promotion
+- Mention Auth0's current promotion (free tier, extended trial, or special developer program)
+- Connect the promotion to their professional needs based on their background
+- Explain how Auth0 can solve authentication pain points for their role/company
+- Mention specific benefits: save development time, enterprise security, scalability
+- Include a call-to-action to check it out
+- Make it feel like you're sharing insider information
+- Use their professional background to make it relevant
+- Sound enthusiastic but helpful, not pushy
+- Keep it conversational and friendly (4-5 sentences max)`
+
+    let userPrompt = ''
+    
+    if (linkedinData && (linkedinData.jobTitle || linkedinData.company || linkedinData.linkedinEnrichmentResponse)) {
+        const jobTitle = linkedinData.jobTitle || linkedinData.linkedinEnrichmentResponse?.headline || 'professional'
+        const company = linkedinData.company || linkedinData.linkedinEnrichmentResponse?.experiences?.[0]?.company || 'their company'
+        const isInTech = jobTitle.toLowerCase().includes('developer') || 
+                        jobTitle.toLowerCase().includes('engineer') || 
+                        jobTitle.toLowerCase().includes('tech') ||
+                        jobTitle.toLowerCase().includes('software') ||
+                        jobTitle.toLowerCase().includes('architect')
+        
+        userPrompt = contactName 
+            ? `Generate an exciting Auth0 promotion message for ${contactName}, who is ${jobTitle} at ${company}. ${isInTech ? 'They are in tech, so focus on developer benefits and time-saving.' : 'They are in business/management, so focus on security and business value.'} Include a special promotion or offer.`
+            : `Generate an exciting Auth0 promotion message for a ${jobTitle} at ${company}. ${isInTech ? 'They are in tech, so focus on developer benefits and time-saving.' : 'They are in business/management, so focus on security and business value.'} Include a special promotion or offer.`
+    } else {
+        userPrompt = contactName 
+            ? `Generate an exciting Auth0 promotion message for ${contactName} with a special offer or promotion.`
+            : `Generate an exciting Auth0 promotion message for this contact with a special offer or promotion.`
+    }
+
+    const chat = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 100
     })
 
     return chat.choices[0]?.message?.content?.trim() || ''
