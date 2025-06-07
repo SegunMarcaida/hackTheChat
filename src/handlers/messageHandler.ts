@@ -6,6 +6,7 @@ import { generateResponse } from '../ai/openai.js'
 import { createLogger } from '../logger/index.js'
 import { saveMessage, saveContact } from '../database/firestore.js'
 import { ContactInfo } from '../interfaces.js'
+import { processWelcomeFlow } from './welcomeFlow.js'
 
 const logger = createLogger('MessageHandler')
 
@@ -71,6 +72,41 @@ async function handleMessage(sock: WASocket, message: WAMessage) {
         
         if (contactInfo.isGroup) {
             return;
+        }
+
+        // 🎯 PROCESAR FLUJO DE BIENVENIDA PARA CONTACTOS NUEVOS
+        const welcomeFlowProcessed = await processWelcomeFlow(
+            sock,
+            remoteJid,
+            contactInfo.name,
+            textContent
+        )
+
+        // Si el flujo de bienvenida procesó el mensaje, no continuar con otros procesamientos
+        if (welcomeFlowProcessed) {
+            logger.info('✅ Message processed by welcome flow', {
+                from: remoteJid,
+                contactName: contactInfo.name
+            })
+            
+            // Aún así, guardar el mensaje en Firestore para registro
+            const messageTimestamp = message.messageTimestamp 
+                ? admin.firestore.Timestamp.fromMillis(Number(message.messageTimestamp) * 1000)
+                : admin.firestore.Timestamp.now()
+
+            await saveMessage({
+                messageId: message.key.id || '',
+                fromJid: remoteJid,
+                contactName: contactInfo.name,
+                contactNumber: contactInfo.number,
+                text: textContent,
+                timestamp: messageTimestamp,
+                messageType: getMessageType(message),
+                fromMe: message.key.fromMe || false,
+                pushName: message.pushName || undefined
+            })
+
+            return
         }
                 
 

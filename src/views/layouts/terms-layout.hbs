@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#if title}}{{title}}{{else}}Terms of Service{{/if}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fafafa;
+        }
+
+        .privacy-main-page {
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+
+        .section_privacy-rich {
+            width: 100%;
+        }
+
+        .padding-global {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .privacy-rich_component {
+            padding: 60px 50px;
+        }
+
+        .privacy-rich-text h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .privacy-rich-text h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .privacy-rich-text h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+            margin-top: 2rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .privacy-rich-text p {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.2rem;
+            color: #555;
+        }
+
+        .privacy-rich-text strong {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .privacy-rich-text ul,
+        .privacy-rich-text ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .privacy-rich-text li {
+            margin-bottom: 0.5rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .privacy-rich-text ul li {
+            list-style-type: disc;
+        }
+
+        .privacy-rich-text ol li {
+            list-style-type: decimal;
+        }
+
+        .privacy-rich-text a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .privacy-rich-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .padding-global {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .privacy-rich_component {
+                padding: 40px 30px;
+            }
+
+            .privacy-rich-text h1 {
+                font-size: 2rem;
+            }
+
+            .privacy-rich-text h2 {
+                font-size: 1.5rem;
+            }
+
+            .privacy-rich-text h3 {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .privacy-rich_component {
+                padding: 30px 20px;
+            }
+
+            .privacy-rich-text h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="privacy-main-page">
+        <div class="section_privacy-rich">
+            <div class="padding-global">
+                <div class="container">
+                    <div class="privacy-rich_component">
+                        <div class="privacy-rich-text">
+                            {{{body}}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html> 

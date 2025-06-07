@@ -23,7 +23,7 @@ export const config = {
 
     // Bot
     bot: {
-        name: process.env.BOT_NAME || 'HackTheChat',
+        name: process.env.BOT_NAME || 'Axiom',
         aiEnabled: process.env.AI_ENABLED === 'true'
     },
 
