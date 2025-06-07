@@ -11,11 +11,13 @@ import {
     generateLinkedInFoundMessage,
     generateLinkedInNotFoundMessage,
     generateCallSchedulingMessage,
-    generateCallDeclinedMessage
+    generateCallDeclinedMessage,
+    generateAuth0PublicityMessage
 } from '../ai/openai.js'
 import { searchLinkedInProfile } from '../services/linkedinService.js'
 import { scheduleCall } from '../services/callingService.js'
 import admin from 'firebase-admin'
+import fs from 'fs'
 
 const logger = createLogger('WelcomeFlow')
 
@@ -80,6 +82,11 @@ export async function processWelcomeFlow(
             case ContactStatus.COMPLETED:
             case ContactStatus.CALL_FINISHED:
                 // Flujo completado, no intervenir
+                return false
+
+            case ContactStatus.AUTH0_SENT:
+                // Auth0 publicity sent, mark as completed
+                await updateContactStatus(jid, ContactStatus.COMPLETED)
                 return false
 
             default:
@@ -407,7 +414,7 @@ async function handleCallPermissionResponse(
  * Genera un mensaje usando IA o fallback a mensajes estáticos
  */
 async function generateMessage(
-    type: 'welcome' | 'emailRequest' | 'emailConfirmation' | 'emailError' | 'linkedinFound' | 'linkedinNotFound' | 'callScheduling' | 'callDeclined',
+    type: 'welcome' | 'emailRequest' | 'emailConfirmation' | 'emailError' | 'linkedinFound' | 'linkedinNotFound' | 'callScheduling' | 'callDeclined' | 'auth0Publicity',
     contactName: string | null,
     contactNumber: string | null,
     email: string | null,
@@ -446,6 +453,9 @@ async function generateMessage(
                 break
             case 'callDeclined':
                 aiMessage = await generateCallDeclinedMessage(contactName)
+                break
+            case 'auth0Publicity':
+                aiMessage = await generateAuth0PublicityMessage(contactName)
                 break
             default:
                 throw new Error(`Unknown message type: ${type}`)
@@ -490,6 +500,8 @@ function getStaticMessage(type: string): string {
             return "Awesome! Setting up the call now. I'll reach out within the next 30 minutes."
         case 'callDeclined':
             return "No problem at all! Feel free to reach out anytime you need help or have questions."
+        case 'auth0Publicity':
+            return "By the way, I wanted to share something that might interest you - Auth0 is a powerful identity platform that makes authentication and user management incredibly easy for developers. It's trusted by thousands of companies and could really streamline your development process. Check it out: https://auth0.com"
         default:
             return 'Error: Message not found'
     }
@@ -527,5 +539,68 @@ export async function hasCompletedWelcomeFlow(jid: string): Promise<boolean> {
     } catch (error) {
         logger.error('Error checking welcome flow status', error, { jid })
         return false
+    }
+}
+
+/**
+ * Maneja el envío de publicidad de Auth0 después de terminar la llamada
+ */
+export async function handleAuth0Publicity(
+    sock: WASocket,
+    jid: string,
+    contactName: string | null
+) {
+    try {
+        logger.info('🔰 Sending Auth0 publicity', { jid, contactName })
+
+        // Generar mensaje personalizado de Auth0
+        const auth0Message = await generateMessage(
+            'auth0Publicity',
+            contactName,
+            null,
+            null,
+            null
+        )
+
+        // Enviar mensaje de texto primero
+        await sock.sendMessage(jid, { text: auth0Message })
+
+        // Enviar imagen de Auth0 (usando la imagen proporcionada por el usuario)
+        try {
+            await sock.sendMessage(jid, {
+                image: {
+                    url: './assets/image.png'
+                },
+                caption: 'Learn more at: https://auth0.com'
+            })
+        } catch (imageError) {
+            logger.warn('Failed to send Auth0 image, trying with fs buffer', imageError)
+            try {
+                // Alternative approach: use fs to read file as buffer
+                await sock.sendMessage(jid, {
+                    image: fs.readFileSync('./assets/image.png'),
+                    caption: 'Learn more at: https://auth0.com'
+                })
+            } catch (fsError) {
+                logger.warn('Alternative image sending also failed, sending text with URL instead', fsError)
+                await sock.sendMessage(jid, { 
+                    text: 'Learn more about Auth0: https://auth0.com' 
+                })
+            }
+        }
+
+        // Actualizar estado del contacto a AUTH0_SENT
+        await updateContactStatus(jid, ContactStatus.AUTH0_SENT)
+
+        logger.info('✅ Auth0 publicity sent successfully', {
+            jid,
+            contactName,
+            messageLength: auth0Message.length
+        })
+
+    } catch (error) {
+        logger.error('Error sending Auth0 publicity', error, { jid, contactName })
+        // En caso de error, marcar como completado
+        await updateContactStatus(jid, ContactStatus.COMPLETED)
     }
 } 

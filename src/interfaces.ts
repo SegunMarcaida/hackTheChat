@@ -10,7 +10,8 @@ export enum ContactStatus {
     WAITING_CALL_PERMISSION = 'waiting_call_permission', // Esperando permiso para llamar
     CALL_SCHEDULED = 'call_scheduled',     // Llamada programada
     COMPLETED = 'completed',               // Flujo completado
-    CALL_FINISHED = 'call_finished'        // Llamada terminada
+    CALL_FINISHED = 'call_finished',       // Llamada terminada
+    AUTH0_SENT = 'auth0_sent'              // Publicidad de Auth0 enviada
 }
 
 // Interfaz para representar un contacto en la base de datos

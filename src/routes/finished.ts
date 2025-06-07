@@ -4,6 +4,7 @@ import { ContactStatus, SimilarContactResult } from '../interfaces.js'
 import { createLogger } from '../logger/index.js'
 import { getSocket } from '../socket/manager.js'
 import { generateCallFinishedMessage } from '../ai/openai.js'
+import { handleAuth0Publicity } from '../handlers/welcomeFlow.js'
 import admin from 'firebase-admin'
 import { findTopMatch } from '../database/vectorSearch.js'
 
@@ -69,7 +70,23 @@ router.post('/api/finished', async (req: Request, res: Response) => {
         // Enviar mensaje de seguimiento
         await sock.sendMessage(jid, { text: followUpMessage })
 
-        logger.info('✅ Call marked as finished and follow-up message sent', {
+        logger.info('✅ Call finished message sent', {
+            jid,
+            contactName: contact.name,
+            messageLength: followUpMessage.length
+        })
+
+        // Esperar un momento antes de enviar la publicidad de Auth0
+        setTimeout(async () => {
+            try {
+                await handleAuth0Publicity(sock, jid, contact.name)
+                logger.info('✅ Auth0 publicity process initiated', { jid, contactName: contact.name })
+            } catch (error) {
+                logger.error('❌ Error sending Auth0 publicity', error, { jid })
+            }
+        }, 3000) // 3 segundos de delay
+
+        logger.info('✅ Call marked as finished and follow-up flow initiated', {
             jid,
             contactName: contact.name,
             messageLength: followUpMessage.length

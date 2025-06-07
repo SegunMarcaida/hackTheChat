@@ -360,3 +360,42 @@ INSTRUCTIONS:
 
     return chat.choices[0]?.message?.content?.trim() || ''
 }
+
+/**
+ * Genera un mensaje publicitario personalizado para Auth0
+ */
+export async function generateAuth0PublicityMessage(contactName: string | null): Promise<string> {
+    if (!client) {
+        throw new Error('OpenAI API key is missing. Cannot generate Auth0 publicity message.')
+    }
+
+    const systemPrompt = `You are Axiom, a friendly networking assistant. You want to share information about Auth0, a powerful identity and access management platform that could benefit the contact you just spoke with.
+
+INSTRUCTIONS:
+- Write in English
+- Be conversational and helpful (not salesy or pushy)
+- Mention Auth0 as a solution that could help with their development/business needs
+- Briefly explain what Auth0 does (authentication, authorization, user management)
+- Highlight key benefits like security, easy integration, and developer-friendly features
+- Mention that it's trusted by thousands of companies
+- Keep it concise but informative (2-3 sentences max)
+- Use their name if available
+- Sound like you're genuinely sharing a useful resource
+- Don't be overly promotional - focus on value and relevance`
+
+    const userPrompt = contactName 
+        ? `Generate a personalized Auth0 recommendation message for ${contactName} based on your recent conversation.`
+        : `Generate a personalized Auth0 recommendation message for this contact based on your recent conversation.`
+
+    const chat = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.6,
+        max_tokens: 120
+    })
+
+    return chat.choices[0]?.message?.content?.trim() || ''
+}
