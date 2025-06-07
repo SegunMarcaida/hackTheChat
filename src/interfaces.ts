@@ -9,7 +9,8 @@ export enum ContactStatus {
     LINKEDIN_FOUND = 'linkedin_found',     // LinkedIn encontrado, preguntando por llamada
     WAITING_CALL_PERMISSION = 'waiting_call_permission', // Esperando permiso para llamar
     CALL_SCHEDULED = 'call_scheduled',     // Llamada programada
-    COMPLETED = 'completed'                // Flujo completado
+    COMPLETED = 'completed',               // Flujo completado
+    CALL_FINISHED = 'call_finished'        // Llamada terminada
 }
 
 // Interfaz para representar un contacto en la base de datos

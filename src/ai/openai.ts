@@ -255,6 +255,47 @@ INSTRUCTIONS:
 }
 
 /**
+ * Genera mensaje de seguimiento después de terminar la llamada
+ */
+export async function generateCallFinishedMessage(contactName: string | null): Promise<string> {
+    if (!client) {
+        throw new Error('OpenAI API key is missing. Cannot generate call finished message.')
+    }
+
+    const systemPrompt = `You are Axiom, a friendly networking assistant. You just finished a call with someone and want to send a follow-up message.
+
+INSTRUCTIONS:
+- Write in Spanish (the user specifically requested this)
+- Be warm and appreciative about the conversation
+- Mention that you enjoyed learning about their experience and projects
+- Explain that you're now analyzing the information they shared
+- Promise to connect them with the best contacts from your network that can help with their goals
+- Mention you'll contact them soon with strategic connections
+- Thank them for their time
+- Express hope that the connections will be valuable for them
+- Keep the tone professional but warm and personal
+- Use their name if available
+- Add an appropriate emoji at the end (like 🚀)
+- Make it feel authentic and not robotic`
+
+    const userPrompt = contactName 
+        ? `Generate a follow-up message for ${contactName} after finishing a call with them.`
+        : `Generate a follow-up message after finishing a call with this contact.`
+
+    const chat = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7, // A bit more creativity for a warmer, more personal message
+        max_tokens: 200
+    })
+
+    return chat.choices[0]?.message?.content?.trim() || ''
+}
+
+/**
  * Genera un mensaje de confirmación cuando se recibe un email válido
  */
 export async function generateEmailConfirmation(contactName: string | null, email: string): Promise<string> {

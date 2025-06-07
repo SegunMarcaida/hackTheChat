@@ -78,6 +78,7 @@ export async function processWelcomeFlow(
 
             case ContactStatus.CALL_SCHEDULED:
             case ContactStatus.COMPLETED:
+            case ContactStatus.CALL_FINISHED:
                 // Flujo completado, no intervenir
                 return false
 

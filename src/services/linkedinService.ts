@@ -105,7 +105,7 @@ async function findLinkedInUrlByEmail(name: string): Promise<string | null> {
         return linkedinUrl
         
     } catch (error) {
-        logger.error('Error finding LinkedIn URL', error, { username })
+        logger.error('Error finding LinkedIn URL', error)
         return null
     }
 }
