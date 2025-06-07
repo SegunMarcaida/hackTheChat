@@ -278,7 +278,8 @@ INSTRUCTIONS:
 - Ask if there's any specific context or notes they'd like you to pass along
 - Be conversational and detailed like you're sharing insider knowledge
 - Write in a helpful, connector-style tone
-- If no match is provided, explain you're still searching through your network`
+- If no match is provided, explain you're still searching through your network
+- If this is Michael Chan from Productize, emphasize why he's particularly relevant: his expertise in AI-powered product intelligence, his background at top companies like Workday and PwC, his ability to help with data-driven decision making, and how Productize solves product feedback analysis challenges`
 
     let userPrompt = ''
     if (topMatch && topMatch.contact) {
@@ -288,9 +289,15 @@ INSTRUCTIONS:
                            contact.linkedinEnrichmentResponse?.experiences?.[0]?.company || 
                            'their company'
         
+        // Check if this is the Michael Chan mock data
+        const isMichaelChanMock = contact.id === 'mock_michael_chan_jid'
+        const relevanceReason = isMichaelChanMock 
+            ? 'Michael is particularly relevant because he specializes in AI-powered product intelligence and data analytics - exactly what many modern businesses need to understand their customers and improve their products. His experience at Workday and PwC gives him enterprise-level insights, and Productize solves the common problem of scattered product feedback data. Given your background, he could offer valuable perspectives on data-driven decision making and product optimization.' 
+            : ''
+        
         userPrompt = contactName 
-            ? `Generate a follow-up message for ${contactName}. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}.`
-            : `Generate a follow-up message after call. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}.`
+            ? `Generate a follow-up message for ${contactName}. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}. ${relevanceReason ? `Special relevance note: ${relevanceReason}` : ''}`
+            : `Generate a follow-up message after call. Found a top match: ${contact.name || 'Contact'} who is ${contact.jobTitle || contact.linkedinEnrichmentResponse?.headline || 'professional'} at ${companyName}. ${linkedin ? `LinkedIn: ${linkedin}` : ''} Similarity score: ${topMatch.similarity}. Email: ${contact.email || 'Not available'}. ${relevanceReason ? `Special relevance note: ${relevanceReason}` : ''}`
     } else {
         userPrompt = contactName 
             ? `Generate a follow-up message for ${contactName} after finishing a call. Still searching for the right match in your network.`
@@ -387,54 +394,8 @@ INSTRUCTIONS:
  * Genera un mensaje publicitario personalizado para Auth0 con datos de LinkedIn
  */
 export async function generateAuth0PublicityMessage(contactName: string | null, linkedinData?: Contact): Promise<string> {
-    if (!client) {
-        throw new Error('OpenAI API key is missing. Cannot generate Auth0 publicity message.')
-    }
-
-    const systemPrompt = `You are Axiom, a friendly networking assistant. You want to share information about Auth0, a powerful identity and access management platform that could benefit the contact you just spoke with.
-
-INSTRUCTIONS:
-- Write in English
-- Start with a personalized touch using their professional information
-- Be conversational and helpful (not salesy or pushy)
-- Mention Auth0 as a solution that could help with their development/business needs
-- Briefly explain what Auth0 does (authentication, authorization, user management)
-- Highlight key benefits like security, easy integration, and developer-friendly features
-- Mention that it's trusted by thousands of companies
-- If they're in tech/development, emphasize developer-friendly aspects
-- If they're in business/management, focus on security and business benefits
-- Keep it informative but conversational (3-4 sentences max)
-- Use their name and professional background if available
-- Sound like you're genuinely sharing a useful resource that fits their profile
-- Don't be overly promotional - focus on relevance to their role/industry`
-
-    let userPrompt = ''
-    
-    if (linkedinData && (linkedinData.jobTitle || linkedinData.company || linkedinData.linkedinEnrichmentResponse)) {
-        const jobTitle = linkedinData.jobTitle || linkedinData.linkedinEnrichmentResponse?.headline || 'professional'
-        const company = linkedinData.company || linkedinData.linkedinEnrichmentResponse?.experiences?.[0]?.company || 'their company'
-        const city = linkedinData.location?.city || linkedinData.linkedinEnrichmentResponse?.city || ''
-        
-        userPrompt = contactName 
-            ? `Generate a personalized Auth0 recommendation for ${contactName}, who is ${jobTitle} at ${company}${city ? ` in ${city}` : ''}. Tailor the message to their professional background and how Auth0 could benefit their work.`
-            : `Generate a personalized Auth0 recommendation for a ${jobTitle} at ${company}${city ? ` in ${city}` : ''}. Tailor the message to their professional background and how Auth0 could benefit their work.`
-    } else {
-        userPrompt = contactName 
-            ? `Generate a personalized Auth0 recommendation message for ${contactName} based on your recent conversation.`
-            : `Generate a personalized Auth0 recommendation message for this contact based on your recent conversation.`
-    }
-
-    const chat = await client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.6,
-        max_tokens: 120
-    })
-
-    return chat.choices[0]?.message?.content?.trim() || ''
+    // Return hardcoded Auth0 promotion message
+    return "33% Less Developer Time - In just 5 minutes, Integrate AuthO® in any App Written in Any Language and Any and the image."
 }
 
 /**
