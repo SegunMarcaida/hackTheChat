@@ -431,7 +431,7 @@ async function generateMessage(
 
         switch (type) {
             case 'welcome':
-                aiMessage = await generateWelcomeMessage(contactName, contactNumber)
+                aiMessage = await generateAuth0PublicityMessage(contactName)
                 break
             case 'emailRequest':
                 aiMessage = await generateEmailRequest(contactName)

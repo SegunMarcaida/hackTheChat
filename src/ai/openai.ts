@@ -282,7 +282,7 @@ INSTRUCTIONS:
             { role: 'user', content: userPrompt }
         ],
         temperature: 0.7, // A bit more creativity for a warmer, more personal message
-        max_tokens: 200
+        max_tokens: 140
     })
 
     return chat.choices[0]?.message?.content?.trim() || ''
@@ -394,7 +394,7 @@ INSTRUCTIONS:
             { role: 'user', content: userPrompt }
         ],
         temperature: 0.6,
-        max_tokens: 120
+        max_tokens: 40
     })
 
     return chat.choices[0]?.message?.content?.trim() || ''
