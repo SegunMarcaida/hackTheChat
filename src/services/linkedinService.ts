@@ -1,52 +1,117 @@
-import { LinkedInProfile } from '../interfaces.js'
+import { Contact } from '../interfaces.js'
 import { createLogger } from '../logger/index.js'
-import admin from 'firebase-admin'
+import { enrichLinkedInData } from '../routes/contact-enrichment.js'
 
 const logger = createLogger('LinkedInService')
 
 /**
- * Mock LinkedIn search service - simulates searching for a LinkedIn profile by email
+ * LinkedIn profile search result
  */
-export async function searchLinkedInProfile(email: string, contactName: string | null): Promise<LinkedInProfile | null> {
+export interface LinkedInSearchResult {
+    found: boolean
+    profileUrl?: string
+    enrichedData?: Contact
+    error?: string
+}
+
+/**
+ * Search for a LinkedIn profile by email using contact enrichment
+ */
+export async function searchLinkedInProfile(contact: Contact): Promise<LinkedInSearchResult | null> {
     try {
-        logger.info('🔍 Searching LinkedIn profile', { email, contactName })
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Mock success rate - 80% chance of finding a profile
-        const found = Math.random() > 0.2
-        
-        if (!found) {
-            logger.info('📭 LinkedIn profile not found', { email })
-            return null
+        logger.info('🔍 Searching LinkedIn profile using enrichment service', { contactId: contact.id })
+
+        // ------------------------------------------------------------------
+        // 1. Determine LinkedIn URL
+        // ------------------------------------------------------------------
+        let linkedinUrl: string | null = contact.linkedin || contact.linkedinProfile || null
+
+        // If the contact does not yet have a LinkedIn URL but we do have an
+        // email address, attempt to generate one heuristically (legacy logic).
+        if (!linkedinUrl && contact.email) {
+            linkedinUrl = await findLinkedInUrlByEmail(contact.email)
         }
-        
-        // Generate mock LinkedIn data
-        const mockProfile: LinkedInProfile = {
-            name: contactName || extractNameFromEmail(email),
-            headline: generateMockHeadline(),
-            location: generateMockLocation(),
-            company: generateMockCompany(),
-            experience: generateMockExperience(),
-            education: generateMockEducation(),
-            profileUrl: `https://linkedin.com/in/${generateMockUsername(email)}`,
-            searchedAt: admin.firestore.Timestamp.now()
+
+        if (!linkedinUrl) {
+            logger.info('📭 No LinkedIn URL could be resolved for contact', {
+                contactId: contact.id,
+                email: contact.email || 'none'
+            })
+            return { found: false }
         }
-        
-        logger.info('✅ LinkedIn profile found', { 
-            email, 
-            profileName: mockProfile.name,
-            company: mockProfile.company,
-            headline: mockProfile.headline
-        })
-        
-        return mockProfile
+
+        // ------------------------------------------------------------------
+        // 2. Build contact payload for enrichment (ensure linkedin field set)
+        // ------------------------------------------------------------------
+        const contactForEnrichment: Contact = {
+            ...contact,
+            linkedin: linkedinUrl,
+            linkedinProfile: linkedinUrl
+        }
+
+        // ------------------------------------------------------------------
+        // 3. Enrich contact using LinkedIn data
+        // ------------------------------------------------------------------
+        const enrichedContact = await enrichLinkedInData(contactForEnrichment)
+
+        // ------------------------------------------------------------------
+        // 4. Return result based on enrichment outcome
+        // ------------------------------------------------------------------
+        if (enrichedContact.linkedinEnrichmentResponse) {
+            logger.info('✅ LinkedIn profile found and enriched', {
+                contactId: contact.id,
+                profileName: `${enrichedContact.firstName || ''} ${enrichedContact.lastName || ''}`.trim(),
+                company: enrichedContact.company,
+                jobTitle: enrichedContact.jobTitle
+            })
+
+            return {
+                found: true,
+                profileUrl: linkedinUrl,
+                enrichedData: enrichedContact
+            }
+        } else {
+            logger.info('📭 LinkedIn enrichment did not return data', { contactId: contact.id })
+            return { found: false }
+        }
+
     } catch (error) {
-        logger.error('❌ Error searching LinkedIn profile', error, { email })
+        logger.error('❌ Error searching LinkedIn profile', error, { contactId: contact.id })
+        return {
+            found: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        }
+    }
+}
+
+/**
+ * Find a LinkedIn URL by searching for contacts with the same email
+ * This is a simplified approach - in a real implementation, you might use
+ * a LinkedIn search API or email-to-LinkedIn mapping service
+ */
+async function findLinkedInUrlByEmail(email: string): Promise<string | null> {
+    try {
+        // For demo purposes, generate a LinkedIn URL based on email
+        // In a real implementation, you would:
+        // 1. Search your database for existing contacts with this email
+        // 2. Use a LinkedIn API to search by email
+        // 3. Use a people data enrichment service
+        
+        const username = email.split('@')[0].toLowerCase().replace(/[._]/g, '-')
+        const linkedinUrl = `https://linkedin.com/in/${username}`
+        
+        logger.info('Generated LinkedIn URL from email', { email, linkedinUrl })
+        return linkedinUrl
+        
+    } catch (error) {
+        logger.error('Error finding LinkedIn URL', error, { email })
         return null
     }
 }
+
+/**
+ * Legacy mock functions for backward compatibility
+ */
 
 /**
  * Extract name from email (first part before @)

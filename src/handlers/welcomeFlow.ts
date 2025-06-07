@@ -222,7 +222,7 @@ async function handleEmailResponse(
 }
 
 /**
- * Busca el perfil de LinkedIn y maneja el resultado
+ * Busca el perfil de LinkedIn y maneja el resultado usando el servicio de enriquecimiento
  */
 async function searchAndHandleLinkedIn(
     sock: WASocket,
@@ -231,37 +231,51 @@ async function searchAndHandleLinkedIn(
     email: string
 ) {
     try {
-        // Buscar perfil de LinkedIn
-        const linkedinProfile = await searchLinkedInProfile(email, contactName)
-        
-        if (linkedinProfile) {
-            // LinkedIn encontrado - compartir info y pedir permiso para llamar
+        // Obtener el contacto actualizado (con el email recién guardado)
+        const existingContact = await getContactByJid(jid)
+
+        if (!existingContact) {
+            logger.warn('Contact not found when attempting LinkedIn search', { jid })
+            return
+        }
+
+        // Buscar perfil de LinkedIn usando el servicio de enriquecimiento
+        const searchResult = await searchLinkedInProfile(existingContact)
+
+        if (searchResult?.found && searchResult.enrichedData) {
+            // LinkedIn encontrado y enriquecido - compartir info y pedir permiso para llamar
             const linkedinMessage = await generateMessage(
                 'linkedinFound',
                 contactName,
                 null,
                 email,
-                linkedinProfile
+                searchResult.enrichedData
             )
             
             await sock.sendMessage(jid, { text: linkedinMessage })
             
-            // Actualizar contacto con datos de LinkedIn
-            await saveContact({
-                jid,
-                name: contactName,
-                number: jid.split('@')[0],
-                email,
-                linkedinProfile: linkedinProfile.profileUrl,
-                linkedinData: linkedinProfile,
-                status: ContactStatus.WAITING_CALL_PERMISSION,
-                lastMessageAt: admin.firestore.Timestamp.now()
-            })
+            // Actualizar contacto con datos de LinkedIn enriquecidos
+            if (existingContact) {
+                const enrichedData = searchResult.enrichedData
+                await saveContact({
+                    jid: existingContact.id,
+                    name: enrichedData.firstName && enrichedData.lastName 
+                        ? `${enrichedData.firstName} ${enrichedData.lastName}` 
+                        : enrichedData.name || existingContact.name,
+                    number: existingContact.number,
+                    email,
+                    linkedinProfile: searchResult.profileUrl,
+                    status: ContactStatus.WAITING_CALL_PERMISSION,
+                    lastMessageAt: admin.firestore.Timestamp.now()
+                })
+            }
             
-            logger.info('🔗 LinkedIn profile found and shared', { 
+            logger.info('🔗 LinkedIn profile found, enriched and shared', { 
                 jid, 
                 contactName,
-                linkedinUrl: linkedinProfile.profileUrl 
+                linkedinUrl: searchResult.profileUrl,
+                company: searchResult.enrichedData.company,
+                jobTitle: searchResult.enrichedData.jobTitle
             })
             
         } else {
@@ -279,7 +293,13 @@ async function searchAndHandleLinkedIn(
             // Marcar como completado (no se puede enriquecer más)
             await updateContactStatus(jid, ContactStatus.COMPLETED)
             
-            logger.info('📭 LinkedIn profile not found, flow completed', { jid, contactName })
+            const errorMsg = searchResult?.error || 'Profile not found'
+            logger.info('📭 LinkedIn profile not found, flow completed', { 
+                jid, 
+                contactName, 
+                email,
+                reason: errorMsg 
+            })
         }
         
     } catch (error) {
@@ -321,14 +341,19 @@ async function handleCallPermissionResponse(
         await sock.sendMessage(jid, { text: schedulingMessage })
         
         // Actualizar estado y programar llamada
-        await saveContact({
-            jid,
-            name: contactName,
-            number: jid.split('@')[0],
-            callPermission: true,
-            status: ContactStatus.CALL_SCHEDULED,
-            lastMessageAt: admin.firestore.Timestamp.now()
-        })
+        const existingContact = await getContactByJid(jid)
+        if (existingContact) {
+            await saveContact({
+                jid: existingContact.id,
+                name: existingContact.name,
+                number: existingContact.number,
+                email: existingContact.email,
+                linkedinProfile: existingContact.linkedinProfile,
+                callPermission: true,
+                status: ContactStatus.CALL_SCHEDULED,
+                lastMessageAt: admin.firestore.Timestamp.now()
+            })
+        }
         
         // Programar la llamada
         const contact = await getContactByJid(jid)
@@ -366,14 +391,19 @@ async function handleCallPermissionResponse(
         await sock.sendMessage(jid, { text: declinedMessage })
         
         // Actualizar estado y marcar como completado
-        await saveContact({
-            jid,
-            name: contactName,
-            number: jid.split('@')[0],
-            callPermission: false,
-            status: ContactStatus.COMPLETED,
-            lastMessageAt: admin.firestore.Timestamp.now()
-        })
+        const contactForDecline = await getContactByJid(jid)
+        if (contactForDecline) {
+            await saveContact({
+                jid: contactForDecline.id,
+                name: contactForDecline.name,
+                number: contactForDecline.number,
+                email: contactForDecline.email,
+                linkedinProfile: contactForDecline.linkedinProfile,
+                callPermission: false,
+                status: ContactStatus.COMPLETED,
+                lastMessageAt: admin.firestore.Timestamp.now()
+            })
+        }
         
         logger.info('📵 Call permission declined', { jid, contactName })
         
@@ -487,8 +517,14 @@ async function updateContactStatus(jid: string, status: ContactStatus) {
         const contact = await getContactByJid(jid)
         if (contact) {
             await saveContact({
-                ...contact,
+                jid: contact.id, // Map Contact.id to CreateContactData.jid
+                name: contact.name,
+                number: contact.number,
+                email: contact.email,
+                linkedinProfile: contact.linkedinProfile,
                 status,
+                callPermission: contact.callPermission,
+                callScheduled: contact.callScheduled,
                 lastMessageAt: admin.firestore.Timestamp.now()
             })
         }
