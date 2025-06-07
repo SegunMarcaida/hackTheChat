@@ -24,14 +24,14 @@ export async function searchLinkedInProfile(contact: Contact): Promise<LinkedInS
         // ------------------------------------------------------------------
         // 1. Determine LinkedIn URL
         // ------------------------------------------------------------------
-        let linkedinUrl: string | null = contact.linkedin || contact.linkedinProfile || null
+        let linkedinUrl;
 
         // If the contact does not yet have a LinkedIn URL but we do have an
         // email address, attempt to generate one heuristically (legacy logic).
-        if (!linkedinUrl && contact.email) {
-            linkedinUrl = await findLinkedInUrlByEmail(contact.email)
+        if (contact.name) {
+            linkedinUrl = await findLinkedInUrlByEmail(contact.name)
         }
-
+        logger.info('linkedinUrl', { linkedinUrl })
         if (!linkedinUrl) {
             logger.info('📭 No LinkedIn URL could be resolved for contact', {
                 contactId: contact.id,
@@ -89,22 +89,23 @@ export async function searchLinkedInProfile(contact: Contact): Promise<LinkedInS
  * This is a simplified approach - in a real implementation, you might use
  * a LinkedIn search API or email-to-LinkedIn mapping service
  */
-async function findLinkedInUrlByEmail(email: string): Promise<string | null> {
+async function findLinkedInUrlByEmail(name: string): Promise<string | null> {
     try {
         // For demo purposes, generate a LinkedIn URL based on email
         // In a real implementation, you would:
         // 1. Search your database for existing contacts with this email
         // 2. Use a LinkedIn API to search by email
         // 3. Use a people data enrichment service
+        const username = `${name.toLowerCase().replace(/[._\s]/g, '-')}`
+        logger.info('username', { username })
         
-        const username = email.split('@')[0].toLowerCase().replace(/[._]/g, '-')
         const linkedinUrl = `https://linkedin.com/in/${username}`
         
-        logger.info('Generated LinkedIn URL from email', { email, linkedinUrl })
+        logger.info('Generated LinkedIn URL from email', { username, linkedinUrl })
         return linkedinUrl
         
     } catch (error) {
-        logger.error('Error finding LinkedIn URL', error, { email })
+        logger.error('Error finding LinkedIn URL', error, { username })
         return null
     }
 }

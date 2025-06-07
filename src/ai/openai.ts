@@ -1,6 +1,9 @@
 import OpenAI from 'openai'
 import { config } from '../config/index.js'
-import { LinkedInProfile } from '../interfaces.js'
+import { LinkedInResponse, Contact } from '../interfaces.js'
+import { createLogger } from '../logger/index.js'
+
+const logger = createLogger('OpenAI')
 
 let client: OpenAI | null = null
 
@@ -107,10 +110,11 @@ INSTRUCTIONS:
 /**
  * Genera un mensaje compartiendo el perfil de LinkedIn encontrado y pidiendo permiso para llamar
  */
-export async function generateLinkedInFoundMessage(contactName: string | null, linkedinProfile: LinkedInProfile): Promise<string> {
+export async function generateLinkedInFoundMessage(contactName: string | null, linkedinProfile: Contact): Promise<string> {
     if (!client) {
         throw new Error('OpenAI API key is missing. Cannot generate LinkedIn message.')
     }
+    logger.info('linkedinProfile', { linkedinProfile })
 
     const systemPrompt = `You are a friendly networking assistant. You found someone's LinkedIn profile and want to ask if you can call them.
 
@@ -124,9 +128,9 @@ INSTRUCTIONS:
 - No emojis or excessive enthusiasm`
 
     const userPrompt = contactName 
-        ? `Found ${contactName}'s LinkedIn profile. Profile details: ${linkedinProfile.headline} at ${linkedinProfile.company} in ${linkedinProfile.location}. Ask if you can call them.`
-        : `Found contact's LinkedIn profile. Profile details: ${linkedinProfile.headline} at ${linkedinProfile.company} in ${linkedinProfile.location}. Ask if you can call them.`
-
+        ? `Found ${contactName}'s LinkedIn profile. Profile details: ${linkedinProfile?.linkedinEnrichmentResponse?.headline || linkedinProfile?.jobTitle} in ${linkedinProfile?.linkedinEnrichmentResponse?.city || linkedinProfile?.location?.city}. Ask if you can call them.`
+        : `Found contact's LinkedIn profile. Profile details: ${linkedinProfile?.linkedinEnrichmentResponse?.headline || linkedinProfile?.jobTitle} in ${linkedinProfile?.linkedinEnrichmentResponse?.city || linkedinProfile?.location?.city}. Ask if you can call them.`
+    logger.info('userPrompt', { userPrompt })
     const chat = await client.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
